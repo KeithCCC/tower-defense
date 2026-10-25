@@ -22,21 +22,21 @@
 ### Task 1: Paths and placement
 Files: `src/game/pathfinding.ts`, `src/game/model.ts`, `tests/pathfinding.test.ts`, `tests/game.test.ts`.
 Interfaces: `Cell {x,y}`, `distanceMap(width,height,blocked,exit): number[]`, `routeFrom(start, width, height, distances): Cell[]`; `Game.placeTower(cell): ActionResult`.
-- [ ] Write failing tests for shortest path, obstruction, sealed routes, bounds and placement rules.
-- [ ] Run `npm test`; confirm missing implementation failure.
-- [ ] Implement BFS and placement transaction; rerun tests to green.
+- [x] Write failing tests for shortest path, obstruction, sealed routes, bounds and placement rules.
+- [x] Run `npm test`; confirm missing implementation failure.
+- [x] Implement BFS and placement transaction; rerun tests to green.
 
 ### Task 2: Playable simulation
 Files: `src/game/model.ts`, `tests/game.test.ts`.
 Interfaces: `Game.startWave()`, `Game.update(seconds)`, `Game.upgradeTower(id)`, `Game.sellTower(id)`, `Game.togglePause()`, `Game.restart()`; exported typed towers/enemies for rendering.
-- [ ] Add failing tests for movement, enemy safety, combat, range/cooldown, upgrades/refunds, rewards, wave boundaries, pause, victory, defeat and restart.
-- [ ] Implement deterministic simulation, rerun the complete Vitest suite.
+- [x] Add failing tests for movement, enemy safety, combat, range/cooldown, upgrades/refunds, rewards, wave boundaries, pause, victory, defeat and restart.
+- [x] Implement deterministic simulation, rerun the complete Vitest suite.
 
 ### Task 3: Browser game
 Files: `index.html`, `src/main.ts`, `src/style.css`, `src/view/renderer.ts`, `src/view/input.ts`, `tests/input.test.ts`, `playwright.config.ts`, `e2e/game.spec.ts`, `README.md`, `.github/workflows/ci.yml`.
 Interfaces: `render(ctx, game, viewState)` consumes the same Game; `cellAt(clientX,clientY,rect,width,height): Cell|null` maps pointer input.
-- [ ] Write and run failing coordinate and browser behavior tests.
-- [ ] Implement responsive original board and controls, fixed-step loop, touch/keyboard input and status feedback.
-- [ ] Run `npm test`, `npm run build`, `npm run test:e2e`; inspect desktop/mobile screenshots.
-- [ ] Document rules, commands, architecture and validation limits. Save tested cloud installation/start instructions.
-- [ ] Review the whole change with a fresh reviewer, fix important findings, commit, push feature branch and open a PR against `link`.
+- [x] Write and run failing coordinate and browser behavior tests.
+- [x] Implement responsive original board and controls, fixed-step loop, touch/keyboard input and status feedback.
+- [x] Run `npm test`, `npm run build`, `npm run test:e2e`; inspect desktop/mobile screenshots.
+- [x] Document rules, commands, architecture and validation limits. Save tested cloud installation/start instructions.
+- [x] Review the whole change with a fresh reviewer, fix important findings, commit, push feature branch and open a PR against `link`.
