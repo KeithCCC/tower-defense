@@ -22,12 +22,18 @@ npm run build         # TypeScriptの型チェックと本番ビルド
 npm run preview       # distの確認
 ```
 
+`npm run build` はJavaScript・CSSを埋め込んだ単一HTMLを `dist/waypoint.html`（および `dist/index.html`）に生成します。チャットのHTMLプレビューや、サーバーを起動せずに遊ぶ場合は、このビルド済みファイルを開いてください。リポジトリ直下の `index.html` はVite用の入口であり、単体では動作しません。プレビュー側でJavaScript自体が禁止されている場合は、ダウンロードしたHTMLを通常のブラウザで開いてください。
+
+GitHub Actionsの成功した実行からも、Artifactsの `waypoint-single-html` をダウンロードできます。
+
 ブラウザテスト:
 
 ```sh
 npx playwright install chromium
 npm run test:e2e
 ```
+
+ブラウザテストは最初にビルドを実行します。通常のVite経由の操作に加え、単一HTMLを外部通信をすべて拒否した文書へ読み込み、起動・配置・強化・売却・Wave開始を検証します。
 
 既存の `/usr/bin/chromium` があれば自動的に利用します。別の実行ファイルは `CHROMIUM_PATH` で指定できます。Linuxでブラウザの共有ライブラリがない場合は、Playwrightの案内に従って `npx playwright install --with-deps chromium` を実行します。
 
