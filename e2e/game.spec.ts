@@ -67,3 +67,17 @@ test('keyboard can place and select a tower', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expect(page.locator('#selected-name')).toHaveText('キャノン Lv.1');
 });
+
+test('can build while paused with an unobscured grid', async ({ page }) => {
+  await page.goto('/');
+  await cell(page, 1, 4);
+  await page.locator('#start-wave').click();
+  await page.locator('#pause').click();
+  await expect(page.locator('#phase')).toHaveText('一時停止');
+  await expect(page.locator('#board-overlay')).toBeHidden();
+  const funds = Number(await page.locator('#money').textContent());
+  await cell(page, 3, 5);
+  await expect(page.locator('#money')).toHaveText(String(funds - 20));
+  await expect(page.locator('#selected-name')).toHaveText('キャノン Lv.1');
+  await expect(page.locator('#phase')).toHaveText('一時停止');
+});

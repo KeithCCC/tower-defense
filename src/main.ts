@@ -150,7 +150,11 @@ element('sell').addEventListener('click', () => {
   report(result, '砲台を売却し、投資額の70%を回収しました。');
 });
 element('start-wave').addEventListener('click', () => report(game.startWave(), `Wave ${game.wave} 開始。迎撃中も配置・強化・売却ができます。`));
-element('pause').addEventListener('click', () => { game.togglePause(); syncUI(); });
+element('pause').addEventListener('click', () => {
+  game.togglePause();
+  feedback(game.paused ? '一時停止中。盤面を見ながら配置・強化できます。「再開」で迎撃を続けます。' : '迎撃を再開しました。');
+  syncUI();
+});
 element('speed').addEventListener('click', () => { speed = speed === 1 ? 2 : 1; text('speed', `${speed}×`); });
 element('route-toggle').addEventListener('click', () => { view.showRoute = !view.showRoute; element('route-toggle').setAttribute('aria-pressed', String(view.showRoute)); });
 element('restart').addEventListener('click', () => {
@@ -192,11 +196,11 @@ function syncUI(): void {
   text('wave-hint', game.finished ? game.status === 'won' ? 'すべてのWaveを守り抜きました。' : '迷路を見直して、もう一度挑戦しよう。' : active ? '迎撃中も砲台を配置・強化できます。' : `クリア報酬 +${info.bonus} C。準備ができたら開始。`);
   text('start-label', game.finished ? game.status === 'won' ? '全Waveクリア' : '防衛終了' : active ? `Wave ${String(game.wave).padStart(2, '0')} 進行中` : `Wave ${String(next).padStart(2, '0')} を開始`);
   element<HTMLButtonElement>('start-wave').disabled = active || game.finished;
-  element('board-overlay').hidden = !game.finished && !game.paused;
-  if (game.finished || game.paused) {
-    text('overlay-label', game.paused ? 'TACTICAL PAUSE' : game.status === 'won' ? 'MISSION COMPLETE' : 'SIGNAL LOST');
-    text('overlay-title', game.paused ? '作戦を練ろう。' : game.status === 'won' ? '防衛、成功。' : 'もう一度、道をつくろう。');
-    text('overlay-text', game.paused ? '配置・強化ができます。「再開」で迎撃を続けます。' : game.status === 'won' ? `${game.kills} 体撃破 / 残りライフ ${game.lives}` : `Wave ${game.wave} で防衛終了。下の「最初からやり直す」で再挑戦。`);
+  element('board-overlay').hidden = !game.finished;
+  if (game.finished) {
+    text('overlay-label', game.status === 'won' ? 'MISSION COMPLETE' : 'SIGNAL LOST');
+    text('overlay-title', game.status === 'won' ? '防衛、成功。' : 'もう一度、道をつくろう。');
+    text('overlay-text', game.status === 'won' ? `${game.kills} 体撃破 / 残りライフ ${game.lives}` : `Wave ${game.wave} で防衛終了。下の「最初からやり直す」で再挑戦。`);
   }
 }
 
