@@ -22,18 +22,25 @@
 ### Task 1: Definitions, routes and combat
 Files: `src/game/definitions.ts`, `src/game/model.ts`, `tests/enemy-patterns.test.ts`, existing regression tests.
 Interfaces: `TowerKind`, `EnemyKind`, `LaneId`, `TOWER_TYPES`, `ENEMY_TYPES`, `waveInfo(wave)`; `Game.placeTower(cell, kind='cannon')`, `checkPlacement(cell,kind)`, `routes`, `lanes`, `statsFor(tower)`; enemies retain lane/segment/slow state.
-- [ ] Write failing tests for both routes, new towers, air, slowing/immunity, splash, split/escape semantics, bursts, forecasts and accounting.
-- [ ] Implement definitions and simulation; update old tests only for deliberately changed rules (two portals, wave roster, dedicated air counters). Run full Vitest suite to green.
+- [x] Write failing tests for both routes, new towers, air, slowing/immunity, splash, split/escape semantics, bursts, forecasts and accounting.
+- [x] Implement definitions and simulation; update old tests only for deliberately changed rules (two portals, wave roster, dedicated air counters). Run full Vitest suite to green.
 
 ### Task 2: Playable controls and drawing
 Files: `src/main.ts`, `src/style.css`, `src/view/renderer.ts`, `e2e/game.spec.ts`, `e2e/standalone.spec.ts`.
 Interfaces: renderer consumes `ViewState.buildKind`; UI reads the same shared definitions as the simulation; no hidden browser test hooks.
-- [ ] Write failing browser tests for four choices, selected costs/refunds/effects, previews and enemy forecast.
-- [ ] Implement role selection, two routes, unique enemy/tower silhouettes, slow indication, forecasts, wave roster and enemy guide.
-- [ ] Run tests, build and desktop/mobile E2E; inspect screenshots and isolated standalone loading.
+- [x] Write failing browser tests for four choices, selected costs/refunds/effects, previews and enemy forecast.
+- [x] Implement role selection, two routes, unique enemy/tower silhouettes, slow indication, forecasts, wave roster and enemy guide.
+- [x] Run tests, build and desktop/mobile E2E; inspect screenshots and isolated standalone loading.
 
 ### Task 3: Balance and delivery
 Files: `tests/balance.test.ts`, `README.md`, documentation.
-- [ ] Verify a concrete defense wins all ten waves using only starting/earned resources; verify cannon-only defense cannot shoot air.
-- [ ] Independent whole-change review; fix important defects with regression tests; run final validation.
-- [ ] Build the downloadable HTML, commit and push the feature branch, update the existing PR if GitHub access allows it. Report any access blocker and actual validation limits.
+- [x] Verify a concrete defense wins all ten waves using only starting/earned resources; verify cannon-only defense cannot shoot air.
+- [x] Independent whole-change review; fix important defects with regression tests; run final validation.
+- [x] Build the downloadable HTML, commit and push the feature branch, update the existing PR if GitHub access allows it. Report any access blocker and actual validation limits.
+
+## Validation record
+
+- Vitest: 45 tests passed. Browser: 30 cases passed across desktop/mobile portrait/mobile landscape, including isolated standalone HTML. Type check and production build passed.
+- Independent read-only review approved with no actionable findings. Its separate earned-resource playthrough won all ten waves with 20 lives, 636 C and 161 kills.
+- Real iPhone Safari, public hosting and historical DTD fidelity remain unverified/out of scope.
+- Native HTTPS Git access works. GitHub API requests are proxy-forbidden in this running instance despite api.github.com being present in the saved network draft; do not request another credential or claim API metadata updates succeeded.
