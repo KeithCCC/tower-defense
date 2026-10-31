@@ -23,9 +23,9 @@ describe('tower placement', () => {
   it('rejects a complete wall atomically', () => {
     const g = new Game();
     g.money = 1000;
-    for (let y = 0; y < 11; y++) expect(g.placeTower({ x: 7, y }).ok).toBe(true);
+    for (let y = 0; y < 11; y++) expect(g.placeTower({ x: 8, y }).ok).toBe(true);
     const before = { money: g.money, route: g.route, count: g.towers.length };
-    expect(g.placeTower({ x: 7, y: 11 })).toMatchObject({ ok: false, reason: 'blocked' });
+    expect(g.placeTower({ x: 8, y: 11 })).toMatchObject({ ok: false, reason: 'blocked' });
     expect(g.money).toBe(before.money);
     expect(g.route).toEqual(before.route);
     expect(g.towers).toHaveLength(before.count);
@@ -240,6 +240,11 @@ describe('waves and combat', () => {
       const result = g.placeTower({ x, y });
       if (result.ok) { g.upgradeTower(result.towerId!); g.upgradeTower(result.towerId!); }
     }
+    for (const x of [5, 9]) for (const y of [3, 7]) {
+      const result = g.placeTower({ x, y }, 'antiair');
+      expect(result.ok).toBe(true);
+      if (result.ok) { g.upgradeTower(result.towerId!); g.upgradeTower(result.towerId!); }
+    }
     for (let wave = 1; wave <= 10; wave++) {
       expect(g.startWave().ok).toBe(true);
       advance(g, 60);
@@ -248,7 +253,7 @@ describe('waves and combat', () => {
     expect(g.wave).toBe(10);
     expect(g.status).toBe('won');
     expect(g.lives).toBe(20);
-    expect(g.kills).toBe(180);
+    expect(g.kills).toBe(161); // 133 scheduled enemies + 28 split children.
     expect(g.startWave().ok).toBe(false);
     expect(g.placeTower({ x: 1, y: 1 }).ok).toBe(false);
   });

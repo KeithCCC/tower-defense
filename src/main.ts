@@ -1,6 +1,8 @@
 import './style.css';
 import { Game, TOTAL_WAVES, waveInfo } from './game/model';
 import type { ActionResult } from './game/model';
+import { ENEMY_TYPES, TOWER_TYPES } from './game/definitions';
+import type { EnemyKind, TowerKind, WaveInfo } from './game/definitions';
 import type { Cell } from './game/pathfinding';
 import { cellAt } from './view/input';
 import { render } from './view/renderer';
@@ -19,10 +21,15 @@ const icon = (name: string): string => {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] ?? paths.arrow}</svg>`;
 };
 
+const towerKinds = Object.keys(TOWER_TYPES) as TowerKind[];
+function roster(info: WaveInfo): string {
+  return info.kinds.map(kind => `${ENEMY_TYPES[kind].name} ×${info.entries.filter(e => e.kind === kind).length}`).join(' / ');
+}
+
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <header class="site-header">
     <a class="brand" href="./" aria-label="Waypoint ホーム"><span class="brand-mark" aria-hidden="true">W</span><span>WAYPOINT<span class="brand-sub">MAZE DEFENSE</span></span></a>
-    <div class="header-right"><span class="edition">PROTOTYPE / 01</span><a class="help-link" href="#guide">遊び方 <span>↗</span></a></div>
+    <div class="header-right"><span class="edition">PATTERN EDITION / 02</span><a class="help-link" href="#guide">遊び方 <span>↗</span></a></div>
   </header>
   <main>
     <section class="intro"><div><div class="eyebrow"><span class="status-dot"></span> BUILD. REDIRECT. DEFEND.</div><h1>道をつくり、<span>守り抜く。</span></h1></div><p>砲台が、道になる。<br>あなただけの迷路で、10のWaveを生き残ろう。</p></section>
@@ -35,34 +42,38 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div class="game-layout">
       <section class="field-panel" aria-label="防衛フィールド">
         <div class="field-toolbar"><div class="field-title"><span class="status-dot"></span><span id="phase">配置フェーズ</span><span class="grid-size">16 × 12</span></div><div class="field-controls"><button id="route-toggle" class="text-button" aria-pressed="true">経路表示</button><button id="speed" class="small-button" aria-label="ゲーム速度を切り替え">1×</button><button id="pause" class="small-button" disabled>一時停止</button></div></div>
-        <div class="field-labels"><span><i class="entry-dot"></i> ENTRY</span><span>SECTOR 01 — OPEN GRID</span><span>EXIT <i class="exit-dot"></i></span></div>
+        <div class="field-labels"><span><i class="entry-dot"></i> 2 ENTRIES</span><span id="route-description">左→右 / 上→下</span><span>2 EXITS <i class="exit-dot"></i></span></div>
         <div class="board-frame">
           <canvas id="battlefield" width="800" height="600" tabindex="0" role="application" aria-label="16列12行の防衛フィールド。クリックかタップで砲台を配置。矢印キーで移動、Enterで配置または選択。" aria-describedby="keyboard-position feedback"></canvas>
           <span id="keyboard-position" class="sr-only">カーソル: 列1、行6</span>
           <div id="board-overlay" class="board-overlay" hidden><span class="eyebrow" id="overlay-label"></span><h2 id="overlay-title"></h2><p id="overlay-text"></p></div>
         </div>
-        <div class="field-footer"><div class="legend"><span><i class="legend-tower"></i>砲台</span><span><i class="legend-enemy"></i>敵</span><span><i class="legend-route"></i>進行経路</span></div><span class="cardinal">4-WAY MOVEMENT</span></div>
+        <div class="field-footer"><div class="legend"><span><i class="legend-tower"></i>砲台</span><span><i class="legend-enemy"></i>地上</span><span><i class="legend-air"></i>飛行</span><span><i class="legend-route"></i>2経路</span></div><span class="cardinal">CROSSROADS / 2 LANES</span></div>
         <div id="feedback" class="feedback" role="status" aria-live="polite">空いているマスをタップ / クリックして砲台を配置。</div>
       </section>
       <aside class="sidebar" aria-label="建設とウェーブ操作">
         <section class="panel build-card"><div class="panel-heading"><span>01 / BUILD</span><span>建設</span></div>
-          <button id="build-tool" class="tower-choice" aria-label="キャノンの配置モード"><span class="tower-art">${icon('tower')}</span><span class="tower-description"><strong>キャノン</strong><small>基本の単体攻撃砲台</small></span><span class="price">20<small> C</small></span></button>
-          <div class="mini-stats"><span>攻撃力 <strong>10</strong></span><span>射程 <strong>2.7</strong></span><span>間隔 <strong>0.65s</strong></span></div>
-          <p class="build-note">配置した砲台が障害物になります。<br>通り道を残しながら、遠回りさせよう。</p>
+          <div class="tower-palette">${towerKinds.map((kind, i) => {
+            const t = TOWER_TYPES[kind];
+            return `<button ${kind === 'cannon' ? 'id="build-tool"' : ''} data-tower-kind="${kind}" class="tower-choice" aria-pressed="${kind === 'cannon'}" aria-label="${t.name}の配置モード" style="--tower-color:${t.color}"><span class="tower-art">${String(i + 1).padStart(2, '0')}</span><span class="tower-description"><strong>${t.name}</strong><small>${t.role}</small></span><span class="price">${t.cost}<small> C</small></span></button>`;
+          }).join('')}</div>
+          <div class="mini-stats"><span>攻撃力 <strong id="build-damage">10</strong></span><span>射程 <strong id="build-range">2.7</strong></span><span>間隔 <strong id="build-interval">0.65s</strong></span></div>
+          <p id="build-effect" class="build-note">地上 / 単体火力</p><p class="build-note">砲台を選んで、空きマスをタップ。<br>4つの出入口と2方向の通り道を残そう。</p>
         </section>
         <section class="panel selection-card" id="selection-card"><div class="panel-heading"><span>02 / INSPECT</span><span>選択中の砲台</span></div>
           <div id="selection-empty" class="selection-empty">${icon('target')}<p>砲台を選択して<br><span>強化・売却ができます</span></p></div>
-          <div id="tower-panel" hidden><div class="selected-heading"><span class="selected-badge">${icon('tower')}</span><div><strong id="selected-name"></strong><small id="selected-cell"></small></div></div><div class="selected-stats"><span>攻撃力 <b id="selected-damage"></b></span><span>射程 <b id="selected-range"></b></span></div><div class="tower-actions"><button id="upgrade" class="upgrade-button"></button><button id="sell" class="sell-button"></button></div></div>
+          <div id="tower-panel" hidden><div class="selected-heading"><span class="selected-badge">${icon('tower')}</span><div><strong id="selected-name"></strong><small id="selected-cell"></small></div></div><p class="build-note" id="selected-effect"></p><div class="selected-stats"><span>攻撃力 <b id="selected-damage"></b></span><span>射程 <b id="selected-range"></b></span></div><div class="tower-actions"><button id="upgrade" class="upgrade-button"></button><button id="sell" class="sell-button"></button></div></div>
         </section>
-        <section class="panel wave-card"><div class="panel-heading"><span id="wave-heading">NEXT WAVE</span><span id="wave-kind">通常部隊</span></div><div class="wave-title"><h2 id="wave-title">Wave 01</h2><span id="wave-detail">9 体</span></div><div class="wave-track"><div id="wave-progress"></div></div><p id="wave-hint">準備ができたら、迎撃を始めよう。</p><button id="start-wave" class="primary-button"><span id="start-label">Wave 01 を開始</span>${icon('arrow')}</button></section>
+        <section class="panel wave-card"><div class="panel-heading"><span id="wave-heading">NEXT WAVE</span><span id="wave-kind">交差する進路</span></div><div class="wave-title"><h2 id="wave-title">Wave 01</h2><span id="wave-detail">9 体</span></div><p id="wave-roster" class="wave-roster"></p><div class="wave-track"><div id="wave-progress"></div></div><p id="wave-hint">準備ができたら、迎撃を始めよう。</p><button id="start-wave" class="primary-button"><span id="start-label">Wave 01 を開始</span>${icon('arrow')}</button><details id="wave-catalog" class="wave-catalog"><summary>全10 Waveの予告</summary><ol>${Array.from({ length: TOTAL_WAVES }, (_, i) => { const info = waveInfo(i + 1); return `<li><strong>${String(i + 1).padStart(2, '0')} / ${info.title}</strong><span>${roster(info)}</span><p>${info.hint}</p></li>`; }).join('')}</ol></details></section>
       </aside>
     </div>
-    <section id="guide" class="guide" aria-label="遊び方"><div class="guide-title"><span class="eyebrow">FIELD NOTES</span><h2>3つの基本ルール</h2></div><div><span class="step-number">01</span><h3>砲台で迷路をつくる</h3><p>空きマスに配置。敵はそのたびに<br>出口への最短経路を探し直します。</p></div><div><span class="step-number">02</span><h3>通り道は、残しておく</h3><p>入口や敵を閉じ込める配置は不可。<br>長い道と、射程の重なりがカギ。</p></div><div><span class="step-number">03</span><h3>資金を次の一手に</h3><p>撃破・Waveクリアで資金獲得。<br>強化と売却を使い、10 Waveを防衛。</p></div></section>
+    <section id="guide" class="guide" aria-label="遊び方"><div class="guide-title"><span class="eyebrow">FIELD NOTES</span><h2>3つの基本ルール</h2></div><div><span class="step-number">01</span><h3>2方向の迷路をつくる</h3><p>地上敵は左右・上下から進入。<br>中央付近で両方の進路を迎撃しよう。</p></div><div><span class="step-number">02</span><h3>飛行には、対空砲を</h3><p>飛行型は迷路も地上用砲台も無視。<br>Wave 4までに対空砲を準備しよう。</p></div><div><span class="step-number">03</span><h3>次Waveに合わせる</h3><p>集団・分裂には範囲攻撃。<br>減速が効かない耐性型には直接火力。</p></div></section>
+    <section id="enemy-guide" class="enemy-guide" aria-label="敵の特徴と対策"><div class="enemy-guide-heading"><span class="eyebrow">KNOW YOUR ENEMY</span><h2>敵を知り、防衛を変える。</h2><p>7つの役割と、分裂から生まれる小型敵。原作の役割に着想を得た独自ルールです。</p></div><div class="enemy-cards">${(Object.keys(ENEMY_TYPES) as EnemyKind[]).map(kind => { const enemy = ENEMY_TYPES[kind]; return `<article class="enemy-card"><h3><span class="enemy-symbol enemy-${kind}" style="--enemy-color:${enemy.color}" aria-hidden="true"></span>${enemy.name}</h3><p>${enemy.hint}</p></article>`; }).join('')}</div></section>
     <footer class="site-footer"><span>WAYPOINT <span class="footer-separator">/</span> AN ORIGINAL MAZE DEFENSE</span><button id="restart" class="text-button">${icon('reset')}最初からやり直す</button></footer>
   </main>`;
 
 const game = new Game();
-const view: ViewState = { selectedId: null, hover: null, showRoute: true };
+const view: ViewState = { selectedId: null, hover: null, showRoute: true, buildKind: 'cannon' };
 const canvas = document.querySelector<HTMLCanvasElement>('#battlefield')!;
 const ctx = canvas.getContext('2d')!;
 let speed = 1;
@@ -96,9 +107,9 @@ function activate(cell: Cell): void {
     view.selectedId = tower.id;
     feedback('選択した砲台の射程を表示しています。強化・売却ができます。');
   } else {
-    const result = game.placeTower(cell);
+    const result = game.placeTower(cell, view.buildKind);
     if (result.ok) view.selectedId = result.towerId ?? null;
-    report(result, 'キャノンを配置しました。さらに配置して、敵を遠回りさせよう。');
+    report(result, `${TOWER_TYPES[view.buildKind].name}を配置しました。次Waveの敵に合わせて防衛しよう。`);
   }
   syncUI();
 }
@@ -141,7 +152,12 @@ canvas.addEventListener('keydown', event => {
   }
 });
 
-element('build-tool').addEventListener('click', () => { view.selectedId = null; feedback('空いているマスをタップ / クリックして砲台を配置。'); syncUI(); });
+document.querySelectorAll<HTMLButtonElement>('[data-tower-kind]').forEach(button => button.addEventListener('click', () => {
+  view.buildKind = button.dataset.towerKind as TowerKind;
+  view.selectedId = null;
+  feedback(`${TOWER_TYPES[view.buildKind].name}を選択中。${TOWER_TYPES[view.buildKind].role}。空きマスをタップして配置。`);
+  syncUI();
+}));
 element('upgrade').addEventListener('click', () => { if (view.selectedId !== null) report(game.upgradeTower(view.selectedId), '砲台を強化しました。攻撃力と射程が上がりました。'); });
 element('sell').addEventListener('click', () => {
   if (view.selectedId === null) return;
@@ -159,7 +175,7 @@ element('speed').addEventListener('click', () => { speed = speed === 1 ? 2 : 1; 
 element('route-toggle').addEventListener('click', () => { view.showRoute = !view.showRoute; element('route-toggle').setAttribute('aria-pressed', String(view.showRoute)); });
 element('restart').addEventListener('click', () => {
   if ((game.wave > 0 || game.towers.length > 0) && !game.finished && !window.confirm('現在のゲームを終了し、最初からやり直しますか？')) return;
-  game.restart(); view.selectedId = null; view.hover = null; speed = 1;
+  game.restart(); view.selectedId = null; view.hover = null; view.buildKind = 'cannon'; speed = 1;
   keyboardCell = { x: 0, y: 5 }; text('speed', '1×');
   feedback('新しい防衛を開始しました。砲台を配置して、道をつくろう。'); syncUI();
 });
@@ -171,13 +187,23 @@ function syncUI(): void {
   element('phase').parentElement!.classList.toggle('in-combat', game.status === 'running' && !game.paused);
   const pause = element<HTMLButtonElement>('pause');
   pause.disabled = game.status !== 'running'; text('pause', game.paused ? '再開' : '一時停止');
+  const build = TOWER_TYPES[view.buildKind];
+  text('build-damage', build.levels[0].damage); text('build-range', build.levels[0].range); text('build-interval', `${build.levels[0].interval}s`);
+  text('build-effect', build.role);
+  for (const kind of towerKinds) {
+    const button = document.querySelector<HTMLButtonElement>(`[data-tower-kind="${kind}"]`)!;
+    const pressed = String(kind === view.buildKind);
+    if (button.getAttribute('aria-pressed') !== pressed) button.setAttribute('aria-pressed', pressed);
+  }
   const selected = game.towers.find(t => t.id === view.selectedId);
   element('selection-empty').hidden = !!selected;
   element('tower-panel').hidden = !selected;
   element('selection-card').classList.toggle('has-selection', !!selected);
   if (selected) {
     const stats = game.statsFor(selected);
-    text('selected-name', `キャノン Lv.${selected.level}`);
+    const definition = TOWER_TYPES[selected.kind];
+    text('selected-name', `${definition.name} Lv.${selected.level}`);
+    text('selected-effect', `${definition.role}${stats.splash > 0 ? ` / 範囲 ${stats.splash}` : ''}${stats.slow < 1 ? ` / 速度 −${Math.round((1 - stats.slow) * 100)}%` : ''}`);
     text('selected-cell', `GRID ${String(selected.x + 1).padStart(2, '0')} : ${String(selected.y + 1).padStart(2, '0')}`);
     text('selected-damage', stats.damage); text('selected-range', stats.range);
     text('upgrade', stats.upgradeCost === null ? '最大レベル' : `強化 · ${stats.upgradeCost} C`);
@@ -190,10 +216,11 @@ function syncUI(): void {
   const info = waveInfo(next);
   text('wave-heading', game.finished ? 'RESULT' : active ? 'CURRENT WAVE' : 'NEXT WAVE');
   text('wave-title', `Wave ${String(next).padStart(2, '0')}`);
-  text('wave-kind', info.heavy ? '重装部隊を含む' : '通常 + 高速部隊');
+  text('wave-kind', info.title);
+  text('wave-roster', roster(info));
   text('wave-detail', active ? `残り ${game.remainingToSpawn + game.enemies.length} 体` : `${info.count} 体`);
-  element('wave-progress').style.width = `${game.finished ? 100 : active ? (1 - (game.remainingToSpawn + game.enemies.length) / info.count) * 100 : 0}%`;
-  text('wave-hint', game.finished ? game.status === 'won' ? 'すべてのWaveを守り抜きました。' : '迷路を見直して、もう一度挑戦しよう。' : active ? '迎撃中も砲台を配置・強化できます。' : `クリア報酬 +${info.bonus} C。準備ができたら開始。`);
+  element('wave-progress').style.width = `${game.finished ? 100 : active ? Math.min(100, game.resolved / Math.max(1, game.waveTotal) * 100) : 0}%`;
+  text('wave-hint', game.finished ? game.status === 'won' ? 'すべてのWaveを守り抜きました。' : '迷路を見直して、もう一度挑戦しよう。' : `${info.hint} クリア報酬 +${info.bonus} C。`);
   text('start-label', game.finished ? game.status === 'won' ? '全Waveクリア' : '防衛終了' : active ? `Wave ${String(game.wave).padStart(2, '0')} 進行中` : `Wave ${String(next).padStart(2, '0')} を開始`);
   element<HTMLButtonElement>('start-wave').disabled = active || game.finished;
   element('board-overlay').hidden = !game.finished;
